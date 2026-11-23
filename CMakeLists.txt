@@ -10,5 +10,9 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 add_compile_options(-Wall -Wextra -Wpedantic)
+
 add_library(orderbook src/order_book.cpp)
 target_include_directories(orderbook PUBLIC src)
+
+add_executable(tests tests/test_order_book.cpp)
+target_link_libraries(tests PRIVATE orderbook)
