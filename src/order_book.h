@@ -12,6 +12,7 @@
 class OrderBook {
 public:
     void add_limit_order(OrderId id, Side side, Price price, Quantity quantity);
+    bool cancel(OrderId id);
 
     std::optional<Price> best_bid() const;
     std::optional<Price> best_ask() const;
