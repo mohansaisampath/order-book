@@ -15,10 +15,11 @@ void erase_order(Book& book, Price price, std::list<Order>::iterator position) {
 
 }  // namespace
 
-void OrderBook::add_limit_order(OrderId id, Side side, Price price, Quantity quantity) {
+AddResult OrderBook::add_limit_order(OrderId id, Side side, Price price, Quantity quantity) {
     Level& level = (side == Side::Buy) ? bids_[price] : asks_[price];
     level.push_back({id, side, price, quantity});
     index_.emplace(id, Location{side, price, std::prev(level.end())});
+    return {true, {}};
 }
 
 bool OrderBook::cancel(OrderId id) {
