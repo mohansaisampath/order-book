@@ -2,7 +2,7 @@
 
 #include <algorithm>
 #include <iterator>
-
+#include <limits>
 namespace {
 
 template <typename Book>
@@ -76,7 +76,15 @@ AddResult OrderBook::add_limit_order(OrderId id, Side side, Price price, Quantit
     }
     return result;
 }
-
+AddResult OrderBook::add_market_order(OrderId id, Side side, Quantity quantity) {
+    AddResult result{true, {}};
+    // A market order accepts any price, so give it a limit nothing can pass.
+    // Whatever it cannot fill is dropped. A market order never rests.
+    Price limit = (side == Side::Buy) ? std::numeric_limits<Price>::max()
+                                      : std::numeric_limits<Price>::min();
+    match_order(id, side, limit, quantity, result.trades);
+    return result;
+}
 bool OrderBook::cancel(OrderId id) {
     auto found = index_.find(id);
     if (found == index_.end()) {

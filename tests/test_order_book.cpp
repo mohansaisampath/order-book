@@ -191,6 +191,52 @@ void limit_price_stops_the_walk() {
     CHECK(book.best_ask() == 103);
     CHECK(!crossed(book));
 }
+void market_buy_sweeps_several_levels() {
+    OrderBook book;
+    book.add_limit_order(1, Side::Sell, 101, 4);
+    book.add_limit_order(2, Side::Sell, 102, 4);
+
+    AddResult result = book.add_market_order(3, Side::Buy, 6);
+    CHECK(result.accepted);
+    CHECK(result.trades.size() == 2);
+    CHECK(result.trades[0] == trade(3, 1, 101, 4));
+    CHECK(result.trades[1] == trade(3, 2, 102, 2));
+    CHECK(book.best_ask() == 102);
+    CHECK(book.size() == 1);
+}
+
+void market_sell_sweeps_several_levels() {
+    OrderBook book;
+    book.add_limit_order(1, Side::Buy, 100, 4);
+    book.add_limit_order(2, Side::Buy, 99, 4);
+
+    AddResult result = book.add_market_order(3, Side::Sell, 6);
+    CHECK(result.trades.size() == 2);
+    CHECK(result.trades[0] == trade(1, 3, 100, 4));
+    CHECK(result.trades[1] == trade(2, 3, 99, 2));
+    CHECK(book.best_bid() == 99);
+}
+
+void market_order_remainder_is_discarded() {
+    OrderBook book;
+    book.add_limit_order(1, Side::Sell, 101, 6);
+
+    AddResult result = book.add_market_order(2, Side::Buy, 10);
+    CHECK(result.trades.size() == 1);
+    CHECK(result.trades[0] == trade(2, 1, 101, 6));
+    CHECK(!book.best_bid().has_value());
+    CHECK(!book.best_ask().has_value());
+    CHECK(book.size() == 0);
+}
+
+void market_order_into_an_empty_book_does_nothing() {
+    OrderBook book;
+    AddResult result = book.add_market_order(1, Side::Buy, 5);
+
+    CHECK(result.accepted);
+    CHECK(result.trades.empty());
+    CHECK(book.size() == 0);
+}
 }  // namespace
 
 int main() {
@@ -208,5 +254,9 @@ int main() {
     buy_walks_up_the_asks();
     sell_walks_down_the_bids();
     limit_price_stops_the_walk();
+        market_buy_sweeps_several_levels();
+    market_sell_sweeps_several_levels();
+    market_order_remainder_is_discarded();
+    market_order_into_an_empty_book_does_nothing();
     std::cout << "all tests passed\n";
 }
