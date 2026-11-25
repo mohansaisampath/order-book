@@ -30,7 +30,7 @@ private:
         Price price;
         Level::iterator position;
     };
-
+    bool can_accept(OrderId id, Quantity quantity) const;
     // Trades the order against the opposite side and returns what is left of it.
     Quantity match_order(OrderId id, Side side, Price limit, Quantity quantity,
                          std::vector<Trade>& trades);

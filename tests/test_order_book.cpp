@@ -237,6 +237,42 @@ void market_order_into_an_empty_book_does_nothing() {
     CHECK(result.trades.empty());
     CHECK(book.size() == 0);
 }
+void zero_quantity_is_rejected() {
+    OrderBook book;
+    AddResult limit = book.add_limit_order(1, Side::Buy, 100, 0);
+    AddResult market = book.add_market_order(2, Side::Buy, 0);
+
+    CHECK(!limit.accepted);
+    CHECK(!market.accepted);
+    CHECK(limit.trades.empty());
+    CHECK(book.size() == 0);
+}
+
+void duplicate_id_is_rejected_and_leaves_the_book_alone() {
+    OrderBook book;
+    book.add_limit_order(1, Side::Sell, 101, 5);
+
+    AddResult limit = book.add_limit_order(1, Side::Buy, 101, 5);
+    AddResult market = book.add_market_order(1, Side::Buy, 5);
+
+    CHECK(!limit.accepted);
+    CHECK(!market.accepted);
+    CHECK(limit.trades.empty());
+    CHECK(market.trades.empty());
+    CHECK(book.size() == 1);
+    CHECK(book.best_ask() == 101);
+    CHECK(book.cancel(1));
+}
+
+void id_can_be_reused_once_the_order_is_gone() {
+    OrderBook book;
+    book.add_limit_order(1, Side::Buy, 100, 5);
+    CHECK(book.cancel(1));
+
+    AddResult again = book.add_limit_order(1, Side::Buy, 100, 5);
+    CHECK(again.accepted);
+    CHECK(book.size() == 1);
+}
 }  // namespace
 
 int main() {
@@ -258,5 +294,8 @@ int main() {
     market_sell_sweeps_several_levels();
     market_order_remainder_is_discarded();
     market_order_into_an_empty_book_does_nothing();
+        zero_quantity_is_rejected();
+    duplicate_id_is_rejected_and_leaves_the_book_alone();
+    id_can_be_reused_once_the_order_is_gone();
     std::cout << "all tests passed\n";
 }

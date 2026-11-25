@@ -67,8 +67,13 @@ void OrderBook::rest_order(OrderId id, Side side, Price price, Quantity quantity
     level.push_back({id, side, price, quantity});
     index_.emplace(id, Location{side, price, std::prev(level.end())});
 }
-
+bool OrderBook::can_accept(OrderId id, Quantity quantity) const {
+    return quantity > 0 && index_.find(id) == index_.end();
+}
 AddResult OrderBook::add_limit_order(OrderId id, Side side, Price price, Quantity quantity) {
+    if (!can_accept(id, quantity)) {
+        return {false, {}};
+    }
     AddResult result{true, {}};
     Quantity left = match_order(id, side, price, quantity, result.trades);
     if (left > 0) {
@@ -76,7 +81,11 @@ AddResult OrderBook::add_limit_order(OrderId id, Side side, Price price, Quantit
     }
     return result;
 }
+
 AddResult OrderBook::add_market_order(OrderId id, Side side, Quantity quantity) {
+    if (!can_accept(id, quantity)) {
+        return {false, {}};
+    }
     AddResult result{true, {}};
     // A market order accepts any price, so give it a limit nothing can pass.
     // Whatever it cannot fill is dropped. A market order never rests.
